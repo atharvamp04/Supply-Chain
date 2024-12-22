@@ -2,9 +2,9 @@ import React from "react";
 
 const RegisterUser = ({ contract, setUserType, setUserName, userType, userName }) => {
   const registerUser = async () => {
-    if (!contract || !userType || !userName) return;
+    if (!contract || !userType) return;
     try {
-      const tx = await contract.registerUser(userType, userName);
+      const tx = await contract.registerUser(parseInt(userType)); // Ensure userType is passed as a number
       await tx.wait();
       alert("User registered successfully!");
     } catch (error) {
