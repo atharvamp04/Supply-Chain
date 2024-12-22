@@ -1,85 +1,148 @@
+// App.js
 import React, { useState, useEffect } from "react";
-import { ethers } from "ethers"; // Updated import to ethers directly
+import { ethers } from "ethers";
+import RegisterUser from "./components/RegisterUser";
+import RegisterProduct from "./components/RegisterProduct";
+import UpdateLocation from "./components/UpdateLocation";
+import AddCertification from "./components/AddCertification";
+import ProductDetails from "./components/ProductDetails";
 import "./App.css";
 
 const App = () => {
   const [contract, setContract] = useState(null);
   const [productId, setProductId] = useState("");
   const [productDetails, setProductDetails] = useState(null);
-
   const [productName, setProductName] = useState("");
   const [supplierName, setSupplierName] = useState("");
   const [certificationDetails, setCertificationDetails] = useState("");
-
   const [location, setLocation] = useState("");
   const [checkpoint, setCheckpoint] = useState("");
-
   const [certifyingAuthority, setCertifyingAuthority] = useState("");
   const [certificationType, setCertificationType] = useState("");
+  const [userType, setUserType] = useState("");
+  const [userName, setUserName] = useState("");
 
-  const [userType, setUserType] = useState(""); // New state for user type
-  const [userName, setUserName] = useState(""); // New state for user name
+  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
-  // Define contract address here
-  const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"; // Example address
-
-  // ABI (replace this with your actual ABI)
   const contractABI = [
+    // ABI code here
     {
       "inputs": [],
       "stateMutability": "nonpayable",
       "type": "constructor"
     },
     {
+      "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
           "internalType": "string",
           "name": "productId",
           "type": "string"
         },
         {
+          "indexed": false,
           "internalType": "string",
-          "name": "productName",
+          "name": "certifyingAuthority",
           "type": "string"
         },
         {
+          "indexed": false,
           "internalType": "string",
-          "name": "supplierName",
-          "type": "string"
-        },
-        {
-          "internalType": "string",
-          "name": "certificationDetails",
+          "name": "certificationType",
           "type": "string"
         }
       ],
-      "name": "registerProduct",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+      "name": "CertificationAdded",
+      "type": "event"
     },
     {
+      "anonymous": false,
       "inputs": [
         {
+          "indexed": false,
           "internalType": "string",
           "name": "productId",
           "type": "string"
         },
         {
+          "indexed": false,
           "internalType": "string",
           "name": "location",
           "type": "string"
         },
         {
+          "indexed": false,
           "internalType": "string",
           "name": "checkpoint",
           "type": "string"
         }
       ],
-      "name": "updateLocation",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+      "name": "LocationUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "location",
+          "type": "string"
+        }
+      ],
+      "name": "ProductDelivered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "productName",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "ProductRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SupplyChain.UserType",
+          "name": "userType",
+          "type": "uint8"
+        }
+      ],
+      "name": "UserRegistered",
+      "type": "event"
     },
     {
       "inputs": [
@@ -136,8 +199,30 @@ const App = () => {
         },
         {
           "internalType": "bool",
-          "name": "delivered",
+          "name": "isDelivered",
           "type": "bool"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "certifyingAuthority",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "certificationType",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct SupplyChain.Certification[]",
+          "name": "certifications",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -146,152 +231,137 @@ const App = () => {
     {
       "inputs": [
         {
-          "internalType": "uint8",
-          "name": "userType",
+          "internalType": "address",
+          "name": "user",
+          "type": "address"
+        }
+      ],
+      "name": "getUserType",
+      "outputs": [
+        {
+          "internalType": "enum SupplyChain.UserType",
+          "name": "",
           "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
         },
         {
           "internalType": "string",
-          "name": "userName",
+          "name": "location",
           "type": "string"
+        }
+      ],
+      "name": "markAsDelivered",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "productName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "supplierName",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "certificationDetails",
+          "type": "string"
+        }
+      ],
+      "name": "registerProduct",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum SupplyChain.UserType",
+          "name": "userType",
+          "type": "uint8"
         }
       ],
       "name": "registerUser",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "productId",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "location",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "checkpoint",
+          "type": "string"
+        }
+      ],
+      "name": "updateLocation",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
   ];
 
-  // Connect to the contract
   const connectContract = async () => {
     if (!window.ethereum) {
-      console.error("MetaMask is not installed or detected.");
       alert("MetaMask is not installed or detected.");
       return;
     }
 
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts.length === 0) {
-        throw new Error("No account found in MetaMask.");
-      }
+      if (accounts.length === 0) throw new Error("No account found in MetaMask.");
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
-      const contractInstance = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-
+      const contractInstance = new ethers.Contract(contractAddress, contractABI, signer);
       setContract(contractInstance);
       console.log("Contract connected successfully.");
     } catch (error) {
-      console.error("Error connecting to MetaMask or the contract:", error);
-      alert(`Failed to connect to MetaMask or the contract: ${error.message}`);
-    }
-  };
-
-  // Register a product
-  const registerProduct = async () => {
-    if (!contract) {
-      console.error("Contract is not initialized.");
-      return;
-    }
-
-    try {
-      const tx = await contract.registerProduct(
-        productId,
-        productName,
-        supplierName,
-        certificationDetails
-      );
-      await tx.wait();
-      alert("Product registered successfully!");
-    } catch (error) {
-      console.error("Error registering product:", error);
-    }
-  };
-
-  // Update product location
-  const updateLocation = async () => {
-    if (!contract) {
-      console.error("Contract is not initialized.");
-      return;
-    }
-
-    try {
-      const tx = await contract.updateLocation(productId, location, checkpoint);
-      await tx.wait();
-      alert("Location updated successfully!");
-    } catch (error) {
-      console.error("Error updating location:", error);
-    }
-  };
-
-  // Add certification
-  const addCertification = async () => {
-    if (!contract) {
-      console.error("Contract is not initialized.");
-      return;
-    }
-
-    try {
-      const tx = await contract.addCertification(
-        productId,
-        certifyingAuthority,
-        certificationType
-      );
-      await tx.wait();
-      alert("Certification added successfully!");
-    } catch (error) {
-      console.error("Error adding certification:", error);
-    }
-  };
-
-  // Fetch product details
-  const getProductDetails = async () => {
-    try {
-      if (!productId) {
-        alert("Please enter a valid product ID.");
-        return;
-      }
-
-      const product = await contract.getProduct(productId);
-      console.log("Product details:", product);
-
-      if (product && product[0] && product[0] !== "0x" && product[0] !== "") {
-        setProductDetails({
-          productName: product[0],
-          supplierName: product[1],
-          certificationDetails: product[2],
-          currentCheckpoint: product[3],
-          isDelivered: product[4] ? "Delivered" : "Not Delivered",
-        });
-      } else {
-        alert("No product found with the provided ID.");
-      }
-    } catch (error) {
-      console.error("Error fetching product details:", error);
-      alert(`Error fetching product details: ${error.message}`);
-    }
-  };
-
-  // Register user as a supplier, manufacturer, regulator, logistics, or retailer
-  const registerUser = async () => {
-    if (!contract || !userType || !userName) {
-      console.error("Contract is not initialized, user type or user name is missing.");
-      return;
-    }
-
-    try {
-      const tx = await contract.registerUser(userType, userName);
-      await tx.wait();
-      alert("User registered successfully!");
-    } catch (error) {
-      console.error("Error registering user:", error);
+      alert(`Failed to connect: ${error.message}`);
     }
   };
 
@@ -302,140 +372,41 @@ const App = () => {
   return (
     <div className="container mt-5">
       <h1 className="text-center">Supply Chain Management</h1>
-
-      {/* Register User */}
-      <div className="mt-4">
-        <h3>Register User</h3>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Enter Your Name"
-            className="form-control my-2"
-            onChange={(e) => setUserName(e.target.value)}
-          />
-          <select
-            className="form-control my-2"
-            onChange={(e) => setUserType(e.target.value)}
-            value={userType}
-          >
-            <option value="">Select User Type</option>
-            <option value="1">Supplier</option>
-            <option value="2">Manufacturer</option>
-            <option value="3">Regulator</option>
-            <option value="4">Logistics</option>
-            <option value="5">Retailer</option>
-          </select>
-          <button className="btn btn-primary" onClick={registerUser}>
-            Register User
-          </button>
-        </div>
-      </div>
-
-      {/* Register Product */}
-      <div className="mt-4">
-        <h3>Register Product</h3>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Product ID"
-            className="form-control my-2"
-            onChange={(e) => setProductId(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Product Name"
-            className="form-control my-2"
-            onChange={(e) => setProductName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Supplier Name"
-            className="form-control my-2"
-            onChange={(e) => setSupplierName(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Certification Details"
-            className="form-control my-2"
-            onChange={(e) => setCertificationDetails(e.target.value)}
-          />
-          <button className="btn btn-primary" onClick={registerProduct}>
-            Register Product
-          </button>
-        </div>
-      </div>
-
-      {/* Update Location */}
-      <div className="mt-4">
-        <h3>Update Location</h3>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Location"
-            className="form-control my-2"
-            onChange={(e) => setLocation(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Checkpoint"
-            className="form-control my-2"
-            onChange={(e) => setCheckpoint(e.target.value)}
-          />
-          <button className="btn btn-primary" onClick={updateLocation}>
-            Update Location
-          </button>
-        </div>
-      </div>
-
-      {/* Add Certification */}
-      <div className="mt-4">
-        <h3>Add Certification</h3>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Certifying Authority"
-            className="form-control my-2"
-            onChange={(e) => setCertifyingAuthority(e.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Certification Type"
-            className="form-control my-2"
-            onChange={(e) => setCertificationType(e.target.value)}
-          />
-          <button className="btn btn-primary" onClick={addCertification}>
-            Add Certification
-          </button>
-        </div>
-      </div>
-
-      
-
-      {/* Display Product Details */}
-      <div className="mt-4">
-        <h3>Get Product Details</h3>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="Enter Product ID"
-            className="form-control my-2"
-            onChange={(e) => setProductId(e.target.value)}
-          />
-          <button className="btn btn-primary" onClick={getProductDetails}>
-            Get Product Details
-          </button>
-        </div>
-        {productDetails && (
-          <div className="mt-4">
-            <h4>Product Details</h4>
-            <p><strong>Product Name:</strong> {productDetails.productName}</p>
-            <p><strong>Supplier Name:</strong> {productDetails.supplierName}</p>
-            <p><strong>Certification Details:</strong> {productDetails.certificationDetails}</p>
-            <p><strong>Current Checkpoint:</strong> {productDetails.currentCheckpoint}</p>
-            <p><strong>Status:</strong> {productDetails.isDelivered}</p>
-          </div>
-        )}
-      </div>
+      <RegisterUser contract={contract} setUserType={setUserType} setUserName={setUserName} userType={userType} userName={userName} />
+      <RegisterProduct
+        contract={contract}
+        productId={productId}
+        setProductId={setProductId}
+        productName={productName}
+        setProductName={setProductName}
+        supplierName={supplierName}
+        setSupplierName={setSupplierName}
+        certificationDetails={certificationDetails}
+        setCertificationDetails={setCertificationDetails}
+      />
+      <UpdateLocation
+        contract={contract}
+        productId={productId}
+        location={location}
+        setLocation={setLocation}
+        checkpoint={checkpoint}
+        setCheckpoint={setCheckpoint}
+      />
+      <AddCertification
+        contract={contract}
+        productId={productId}
+        certifyingAuthority={certifyingAuthority}
+        setCertifyingAuthority={setCertifyingAuthority}
+        certificationType={certificationType}
+        setCertificationType={setCertificationType}
+      />
+      <ProductDetails
+        contract={contract}
+        productId={productId}
+        setProductId={setProductId}
+        productDetails={productDetails}
+        setProductDetails={setProductDetails}
+      />
     </div>
   );
 };
